@@ -1,6 +1,6 @@
 import {HttpEvent, HttpHandler, HttpInterceptor, HttpRequest} from "@angular/common/http";
 import {AuthService} from "../services/auth.service";
-import {Observable} from "rxjs";
+import {catchError, Observable, throwError} from "rxjs";
 import {Injectable} from "@angular/core";
 
 @Injectable()
@@ -14,7 +14,14 @@ export class AppHttpInterceptor implements HttpInterceptor {
         headers: request.headers
           .set('Authorization', 'Bearer ' + this.authService.accessToken)
       })
-      return next.handle(newRequest);
+      return next.handle(newRequest).pipe(
+        catchError(err => {
+          if(err.status==401){
+            this.authService.logout();
+          }
+          return throwError(err.message);
+        })
+      );
     } else return next.handle(request);
   }
 }
